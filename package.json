@@ -1,20 +1,22 @@
 {
-  "name": "@himenon/kubernetes-typescript-openapi",
+  "name": "@himenon/docker-typescript-openapi",
   "version": "1.3.0",
   "description": "Implementation of TypeScript generated from Kubernetes OpenAPI",
   "keywords": [
-    "Kubernetes",
-    "k8s",
+    "Docker",
+    "TypeScript",
+    "API",
+    "Node",
     "OpenAPI",
     "Swagger"
   ],
-  "homepage": "https://github.com/Himenon/kubernetes-typescript-openapi#readme",
+  "homepage": "https://github.com/Himenon/docker-typescript-openapi#readme",
   "bugs": {
-    "url": "https://github.com/Himenon/kubernetes-typescript-openapi/issues"
+    "url": "https://github.com/Himenon/docker-typescript-openapi/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:Himenon/kubernetes-typescript-openapi.git"
+    "url": "git@github.com:Himenon/docker-typescript-openapi.git"
   },
   "license": "MIT",
   "author": {
