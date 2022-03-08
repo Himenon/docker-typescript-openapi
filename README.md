@@ -1,59 +1,40 @@
-# @himenon/kubernetes-typescript-openapi
+# @himenon/docker-typescript-openapi
 
 ```bash
-yarn add -D @himenon/kubernetes-typescript-openapi
+yarn add @himenon/docker-typescript-openapi
 ```
 
 ## Usage
 
 ```ts
+import { Client } from "@himenon/docker-typescript-openapi/v1.41";
+import * as ApiClientImpl from "@himenon/docker-typescript-openapi/api-client-impl";
 import * as fs from "fs";
-import * as yaml from "js-yaml"; // yarn add js-yaml @types/js-yaml
-import type { Schemas } from "@himenon/kubernetes-typescript-openapi/v1.22.3";
 
-const podTemplateSpec: Schemas.io$k8s$api$core$v1$PodTemplateSpec = {
-  metadata: {
-    labels: {
-      app: "nginx",
-    },
-  },
-  spec: {
-    containers: [
-      {
-        name: "nginx",
-        image: "nginx:1.14.2",
-        ports: [
-          {
-            containerPort: 80,
-          },
-        ],
-      },
-    ],
-  },
+const main = async () => {
+  const apiClientImpl = ApiClientImpl.create({
+    socketPath: "/var/run/docker.sock",
+  });
+  const client = new Client(apiClientImpl, "");
+
+  fs.mkdirSync("debug", { recursive: true });
+
+  const filename1 = "debug/docker-images.json";
+  const imageList = await client.ImageList({
+    parameter: {},
+  });
+  fs.writeFileSync(filename1, JSON.stringify(imageList, null, 2), "utf-8");
+  console.log(`Output: ${filename1}`);
+
+  const filename2 = "debug/docker-containers.json";
+  const containerList = await client.ContainerList({
+    parameter: {},
+  });
+  fs.writeFileSync(filename2, JSON.stringify(containerList, null, 2), "utf-8");
+  console.log(`Output: ${filename2}`);
 };
 
-const deployment: Schemas.io$k8s$api$apps$v1$Deployment = {
-  apiVersion: "apps/v1",
-  kind: "Deployment",
-  metadata: {
-    name: "nginx-deployment",
-    labels: {
-      app: "nginx",
-    },
-  },
-  spec: {
-    replicas: 3,
-    selector: {
-      matchLabels: {
-        app: "nginx",
-      },
-    },
-    template: podTemplateSpec,
-  },
-};
-
-const text = yaml.dump(deployment, { noRefs: true, lineWidth: 144 });
-fs.writeFileSync("deployment.yml", text, "utf-8");
+main();
 ```
 
 ## Build
@@ -62,9 +43,9 @@ fs.writeFileSync("deployment.yml", text, "utf-8");
 yarn run build
 ```
 
-## OpenAPI Source for Kubernetes
+## OpenAPI Source for Docker
 
-- <https://github.com/kubernetes/kubernetes/blob/master/api/openapi-spec/swagger.json>
+- <https://docs.docker.com/engine/api>
 
 ## OpenAPI TypeScript Code Generator
 
@@ -78,4 +59,4 @@ Edit [config.ts](./scripts/config.ts)
 
 ## LICENCE
 
-[@Himenon/kubernetes-typescript-openapi](https://github.com/Himenon/kubernetes-typescript-openapi)・MIT
+[@Himenon/docker-typescript-openapi](https://github.com/Himenon/docker-typescript-openapi)・MIT

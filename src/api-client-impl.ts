@@ -37,9 +37,11 @@ export const create = (params: Params): ApiClient<unknown> => {
         ...headers,
       };
       const response = await http.request({
-        socketPath,
+        socketPath: socketPath,
+        method: httpMethod,
         headers: requestHeaders,
         path: requestUrl,
+        requestBody: requestBody,
       });
       return response;
     },
