@@ -66,6 +66,7 @@
   "devDependencies": {
     "@commitlint/cli": "16.2.1",
     "@commitlint/config-conventional": "16.2.1",
+    "@himenon/openapi-parameter-formatter": "^0.2.2",
     "@himenon/openapi-typescript-code-generator": "0.16.0",
     "@types/jest": "27.4.1",
     "@types/js-yaml": "^4.0.5",

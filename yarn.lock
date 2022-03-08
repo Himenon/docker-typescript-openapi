@@ -803,6 +803,13 @@
   resolved "https://registry.yarnpkg.com/@exodus/schemasafe/-/schemasafe-1.0.0-rc.6.tgz#7985f681564cff4ffaebb5896eb4be20af3aae7a"
   integrity sha512-dDnQizD94EdBwEj/fh3zPRa/HWCS9O5au2PuHhZBbuM3xWHxuaKzPBOEWze7Nn0xW68MIpZ7Xdyn1CoCpjKCuQ==
 
+"@himenon/openapi-parameter-formatter@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@himenon/openapi-parameter-formatter/-/openapi-parameter-formatter-0.2.2.tgz#581f37ef657e2ef2f3ab384b5b749c66b039d20d"
+  integrity sha512-/2Ndn50ahpRSnnkd9KpfUo7WtOn7L5tvcABFg8wZCdmBMEMY1zVsh80uanqTr2lOJFujBiJap8iOmxzRZwoG5Q==
+  dependencies:
+    flat "5.0.2"
+
 "@himenon/openapi-typescript-code-generator@0.16.0":
   version "0.16.0"
   resolved "https://registry.yarnpkg.com/@himenon/openapi-typescript-code-generator/-/openapi-typescript-code-generator-0.16.0.tgz#16c8bf58547134a18c00b6a24d885ebac20f2cd9"
@@ -4415,6 +4422,11 @@ flat-cache@^3.0.4:
   dependencies:
     flatted "^3.1.0"
     rimraf "^3.0.2"
+
+flat@5.0.2:
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/flat/-/flat-5.0.2.tgz#8ca6fe332069ffa9d324c327198c598259ceb241"
+  integrity sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==
 
 flatted@^3.1.0:
   version "3.1.1"
