@@ -1,6 +1,6 @@
-import type { ApiClient, QueryParameters } from "../lib/v1.41";
-import type * as Types from "./types";
+import type { ApiClient, QueryParameters } from "./v1.41";
 import * as Formatter from "@himenon/openapi-parameter-formatter";
+import * as http from "./http";
 
 export const generateQueryString = (queryParameters: QueryParameters | undefined): string | undefined => {
   if (!queryParameters) {
@@ -24,26 +24,24 @@ export const generateQueryString = (queryParameters: QueryParameters | undefined
 };
 
 export interface Params {
-  accessToken?: string;
-  fetch: Types.FetchFunction;
+  socketPath: string;
 }
 
-export const create = (params: Params): ApiClient<Types.RequestOption> => {
-  const { accessToken, fetch: _fetch } = params;
-  const apiClientImpl: ApiClient<Types.RequestOption> = {
+export const create = (params: Params): ApiClient<unknown> => {
+  const { socketPath } = params;
+  const apiClientImpl: ApiClient<unknown> = {
     request: async (httpMethod, url, headers, requestBody, queryParameters): Promise<any> => {
       const query = generateQueryString(queryParameters);
       const requestUrl = query ? url + "?" + encodeURI(query) : url;
       const requestHeaders = {
         ...headers,
-        Authorization: "token " + accessToken,
       };
-      const response = await _fetch(requestUrl, {
-        body: JSON.stringify(requestBody),
+      const response = await http.request({
+        socketPath,
         headers: requestHeaders,
-        method: httpMethod,
+        path: requestUrl,
       });
-      return await response.json();
+      return response;
     },
   };
   return apiClientImpl;
