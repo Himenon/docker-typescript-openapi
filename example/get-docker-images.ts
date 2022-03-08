@@ -1,5 +1,5 @@
 import { Client } from "../lib/v1.41";
-import * as ApiClientImpl from "./api-client-impl";
+import * as ApiClientImpl from "../lib/api-client-impl";
 import * as fs from "fs";
 
 const main = async () => {
@@ -10,15 +10,19 @@ const main = async () => {
 
   fs.mkdirSync("debug", { recursive: true });
 
+  const filename1 = "debug/docker-images.json";
   const imageList = await client.ImageList({
     parameter: {},
   });
-  fs.writeFileSync("debug/docker-images.json", JSON.stringify(imageList, null, 2), "utf-8");
+  fs.writeFileSync(filename1, JSON.stringify(imageList, null, 2), "utf-8");
+  console.log(`Output: ${filename1}`);
 
+  const filename2 = "debug/docker-containers.json";
   const containerList = await client.ContainerList({
     parameter: {},
   });
-  fs.writeFileSync("debug/docker-containers.json", JSON.stringify(containerList, null, 2), "utf-8");
+  fs.writeFileSync(filename2, JSON.stringify(containerList, null, 2), "utf-8");
+  console.log(`Output: ${filename2}`);
 };
 
 main();
