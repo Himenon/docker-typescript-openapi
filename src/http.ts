@@ -20,15 +20,18 @@ const getIncomingMessage = async (req: http.ClientRequest): Promise<http.Incomin
 }
 
 const getResponse = async (res: http.IncomingMessage): Promise<any> => {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const chunks: any[] = [];
+    res.on("*", console.info);
     res.on("data", chunk => {
       chunks.push(chunk);
     });
+    res.on("error", (error) => {
+      reject(error);
+    })
     res.on("end", () => {
       const buffer = Buffer.concat(chunks);
       const result = buffer.toString();
-      console.log({result});
       try {
         const json = JSON.parse(result);
         resolve(json);
@@ -56,7 +59,6 @@ export const request = async (args: RequestArgs): Promise<any> => {
   };
   const req = http.request(requestOptions);
   if (hasRequestBody) {
-    console.log(stringifiedRequestBody);
     req.write(stringifiedRequestBody);
   }
   req.end();
