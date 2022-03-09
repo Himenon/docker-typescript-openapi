@@ -1,7 +1,7 @@
 {
   "name": "@himenon/docker-typescript-openapi",
   "version": "1.0.0",
-  "description": "TypeScript implementations generated from Docker OpenAPI.",
+  "description": "TypeScript implementations generated from Docker OpenAPI",
   "keywords": [
     "Docker",
     "TypeScript",
