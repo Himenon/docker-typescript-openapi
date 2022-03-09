@@ -3,6 +3,7 @@ import * as ApiClientImpl from "../src/api-client-impl";
 import * as fs from "fs";
 import * as path from "path";
 import * as stream from "stream";
+import { demuxStream } from "./utils";
 
 const main = async () => {
   const apiClientImpl = ApiClientImpl.create({
@@ -99,10 +100,8 @@ const main = async () => {
     {
       isStream: true,
       callback: res => {
-        res.on("data", chunk => {
-          logStream.write(chunk);
-          logFileStream.write(chunk.toString());
-        });
+        demuxStream(res, logStream, logStream);
+        demuxStream(res, logFileStream, logFileStream);
         res.on("end", () => {
           logStream.end();
           logFileStream.end();
