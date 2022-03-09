@@ -39,13 +39,15 @@ const main = async () => {
       name: containerName,
     },
     requestBody: {
-      Image: "golang:1.17",
-      WorkingDir: "/app",
+      // Image: "golang:1.17",
+      Image: "envoyproxy/envoy-dev",
+      // WorkingDir: "/app",
       AttachStdin: true,
       AttachStdout: true,
       AttachStderr: true,
-      StopTimeout: 1000,
-      Shell: ["date"],
+      OpenStdin: true,
+      // Shell: ["date"],
+      // Cmd: ["exit", '1'],
       HostConfig: {
         Mounts: [
           {
@@ -57,7 +59,28 @@ const main = async () => {
       },
     },
   });
-  console.log(createdContainer);
+  await client.ContainerAttach({
+    parameter: {
+      id: createdContainer.Id,
+      stream: true,
+      stdout: true,
+      stdin: true,
+      stderr: true,
+    },
+  });
+
+  // const logs = await client.ContainerLogs({
+  //   headers: {
+  //     Accept: "application/json",
+  //   },
+  //   parameter: {
+  //     id: createdContainer.Id,
+  //     stdout: true,
+  //     stderr: true,
+  //     follow: true,
+  //     tail: "all",
+  //   },
+  // });
   fs.writeFileSync(filename1, JSON.stringify(createdContainer, null, 2), "utf-8");
   console.log(`Output: ${filename1}`);
 };

@@ -1,26 +1,34 @@
 import * as http from "http";
 
-export interface RequestArgs {
-  socketPath: string;
-  method?: string;
-  path?: string;
-  headers?: http.OutgoingHttpHeaders;
-  requestBody?: any;
+export interface CreateRequestArgs {
+  requestOptions: http.RequestOptions;
+  requestBody?: string;
+  hijack?: boolean;
 }
 
-const createRequest = async (requestOption: http.RequestOptions, requestBody?: string): Promise<http.IncomingMessage> => {
-  const req = http.request(requestOption);
+const createRequest = async ({ requestOptions, requestBody, hijack }: CreateRequestArgs): Promise<http.IncomingMessage> => {
+  const req = http.request(requestOptions);
 
   const cancelTimeout = (() => {
     const timer = setTimeout(() => {
       req.destroy();
-    }, 10000)
+    }, 10000);
     return () => clearTimeout(timer);
   })();
+
   if (requestBody) {
     req.write(requestBody);
   }
-  req.end();
+
+  if (hijack) {
+    cancelTimeout();
+    req.on("upgrade", function (res, sock, head) {
+      console.log(sock);
+    });
+  } else {
+    req.end();
+  }
+
   return new Promise((resolve, reject) => {
     req.on("connect", () => {
       cancelTimeout();
@@ -32,16 +40,16 @@ const createRequest = async (requestOption: http.RequestOptions, requestBody?: s
     //   cancelTimeout();
     //   reject();
     // })
-    req.on("response", (res) => {
+    req.on("response", res => {
       cancelTimeout();
       resolve(res);
     });
-    req.on("error", (error) => {
+    req.on("error", error => {
       cancelTimeout();
       reject(error);
     });
-  })
-}
+  });
+};
 
 const getResponse = async (res: http.IncomingMessage): Promise<any> => {
   return new Promise((resolve, reject) => {
@@ -49,9 +57,9 @@ const getResponse = async (res: http.IncomingMessage): Promise<any> => {
     res.on("data", chunk => {
       chunks.push(chunk);
     });
-    res.on("error", (error) => {
+    res.on("error", error => {
       reject(error);
-    })
+    });
     res.on("end", () => {
       const buffer = Buffer.concat(chunks);
       if (res.statusCode && 400 <= res.statusCode) {
@@ -59,15 +67,24 @@ const getResponse = async (res: http.IncomingMessage): Promise<any> => {
         const error = new Error(errorMessage);
         reject(error);
       }
+      const text = buffer.toString();
       try {
-        const result = buffer.toString();
-        const json = JSON.parse(result);
+        const json = JSON.parse(text);
         resolve(json);
       } catch (error) {
-        resolve(buffer);
+        resolve(text);
       }
     });
-  })
+  });
+};
+
+export interface RequestArgs {
+  socketPath: string;
+  method?: string;
+  path?: string;
+  headers?: http.OutgoingHttpHeaders;
+  requestBody?: any;
+  hijack?: boolean;
 }
 
 export const request = async (args: RequestArgs): Promise<any> => {
@@ -76,7 +93,12 @@ export const request = async (args: RequestArgs): Promise<any> => {
     ...args.headers,
   };
   if (requestBody) {
-    requestHeaders["Content-Length"] = Buffer.byteLength(requestBody, 'utf-8');
+    requestHeaders["Content-Length"] = Buffer.byteLength(requestBody, "utf-8");
+  }
+  if (args.hijack) {
+    requestHeaders;
+    requestHeaders.Connection = "Upgrade";
+    requestHeaders.Upgrade = "tcp";
   }
   const requestOptions: http.RequestOptions = {
     method: args.method,
@@ -85,7 +107,11 @@ export const request = async (args: RequestArgs): Promise<any> => {
     headers: requestHeaders,
   };
   try {
-    const res = await createRequest(requestOptions, requestBody);
+    const res = await createRequest({
+      requestOptions,
+      requestBody,
+      hijack: args.hijack,
+    });
     return await getResponse(res);
   } catch (error) {
     if (error instanceof Error) {
@@ -95,5 +121,4 @@ export const request = async (args: RequestArgs): Promise<any> => {
       throw new Error("Unknown Error");
     }
   }
-  
 };

@@ -30,10 +30,14 @@ export interface Params {
   socketPath: string;
 }
 
-export const create = (params: Params): ApiClient<unknown> => {
+export interface RequestOptions {
+  hijack?: boolean;
+}
+
+export const create = (params: Params): ApiClient<RequestOptions> => {
   const { socketPath } = params;
-  const apiClientImpl: ApiClient<unknown> = {
-    request: async (httpMethod, url, headers, requestBody, queryParameters): Promise<any> => {
+  const apiClientImpl: ApiClient<RequestOptions> = {
+    request: async (httpMethod, url, headers, requestBody, queryParameters, requestOptions): Promise<any> => {
       // Docker's openapi Schema incorrectly uses filters as query parameter
       const { filters, ...omitedQueryParamsteres } = queryParameters || {};
       const query = generateQueryString(omitedQueryParamsteres, filters?.value);
@@ -47,6 +51,7 @@ export const create = (params: Params): ApiClient<unknown> => {
         headers: requestHeaders,
         path: requestUrl,
         requestBody: requestBody,
+        hijack: requestOptions?.hijack,
       });
       return response;
     },
