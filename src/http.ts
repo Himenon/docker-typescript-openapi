@@ -1,11 +1,12 @@
 import * as http from "http";
 import type { Socket } from "net";
+import type * as stream from "stream";
 
 export interface CreateRequestArgs {
   requestOptions: http.RequestOptions;
   requestBody?: string;
   hijack?: boolean;
-  callback?: (sock: Socket) => void;
+  callback?: (sock: stream.Readable) => void;
   /** millseconds */
   timeout?: number;
 }
@@ -44,10 +45,6 @@ const createRequest = async ({ requestOptions, requestBody, hijack, callback, ti
     req.on("close", () => {
       cancelTimeout();
     });
-    // req.on("finish", () => {
-    //   cancelTimeout();
-    //   reject();
-    // })
     req.on("response", res => {
       cancelTimeout();
       resolve(res);
@@ -62,9 +59,10 @@ const createRequest = async ({ requestOptions, requestBody, hijack, callback, ti
 export interface CreateResponseArgs {
   res: http.IncomingMessage;
   isStream?: boolean;
+  callback?: (res: stream.Readable) => void;
 }
 
-const createResponse = async ({ res, isStream }: CreateResponseArgs): Promise<any> => {
+const createResponse = async ({ res, isStream, callback }: CreateResponseArgs): Promise<any> => {
   const chunks: any[] = [];
   res.on("data", chunk => {
     chunks.push(chunk);
@@ -75,7 +73,10 @@ const createResponse = async ({ res, isStream }: CreateResponseArgs): Promise<an
       reject(error);
     });
     if (isStream) {
-      console.log("TODO Stream");
+      if (!callback) {
+        throw new Error("Please use callback");
+      }
+      callback(res);
     } else {
       res.on("end", () => {
         const buffer = Buffer.concat(chunks);
@@ -104,7 +105,11 @@ export interface RequestArgs {
   requestBody?: any;
   hijack?: boolean;
   isStream?: boolean;
-  callback?: (sock: Socket) => void;
+  /**
+   * hijackの場合、requestのunix socketが返ってくる
+   * isStreamの場合、responseのreadableStreamが返ってくる
+   */
+  callback?: (stream: stream.Readable) => void;
   /** millseconds */
   timeout?: number;
 }
@@ -136,7 +141,7 @@ export const request = async (args: RequestArgs): Promise<any> => {
       callback: args.callback,
       timeout: args.timeout,
     });
-    return await createResponse({ res });
+    return await createResponse({ res, callback: args.callback, isStream: args.isStream });
   } catch (error) {
     if (error instanceof Error) {
       const errorMessage = [error.message, `${requestOptions.method}:${requestOptions.path}`].join("\n");

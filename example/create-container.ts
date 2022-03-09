@@ -2,8 +2,7 @@ import { Client } from "../src/v1.41";
 import * as ApiClientImpl from "../src/api-client-impl";
 import * as fs from "fs";
 import * as path from "path";
-
-const wait = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import * as stream from "stream";
 
 const main = async () => {
   const apiClientImpl = ApiClientImpl.create({
@@ -49,15 +48,13 @@ const main = async () => {
       name: containerName,
     },
     requestBody: {
-      // Image: "golang:1.17",
-      Image: "envoyproxy/envoy-dev",
-      // WorkingDir: "/app",
+      Image: "golang:1.17",
+      WorkingDir: "/app",
       AttachStdin: true,
       AttachStdout: true,
       AttachStderr: true,
       OpenStdin: true,
-      // Shell: ["date"],
-      // Cmd: ["exit", '1'],
+      Cmd: ["ls"],
       HostConfig: {
         Mounts: [
           {
@@ -69,41 +66,50 @@ const main = async () => {
       },
     },
   });
+
+  fs.writeFileSync(filename1, JSON.stringify(container, null, 2), "utf-8");
+  console.log(`Output: ${filename1}`);
+
   await client.ContainerStart({
     parameter: {
       id: container.Id,
     },
   });
-  // await client.ContainerAttach(
-  //   {
-  //     parameter: {
-  //       id: container.Id,
-  //       stream: true,
-  //       stdout: true,
-  //       stdin: true,
-  //       stderr: true,
-  //     },
-  //   },
-  //   { hijack: true },
-  // );
 
-  await wait(3000);
+  const logStream = new stream.PassThrough();
+  const logFileStream = fs.createWriteStream("debug/docker-container.log", "utf-8");
 
-  const logs = await client.ContainerLogs({
-    headers: {
-      Accept: "application/json",
-    },
-    parameter: {
-      id: container.Id,
-      stdout: true,
-      stderr: true,
-      // follow: true,
-      tail: "all",
-    },
+  logStream.on("data", chunk => {
+    console.log(chunk.toString("utf-8"));
   });
-  console.log(logs);
-  fs.writeFileSync(filename1, JSON.stringify(container, null, 2), "utf-8");
-  console.log(`Output: ${filename1}`);
+
+  await client.ContainerLogs(
+    {
+      headers: {
+        Accept: "application/json",
+      },
+      parameter: {
+        id: container.Id,
+        stdout: true,
+        stderr: true,
+        follow: true,
+        tail: "all",
+      },
+    },
+    {
+      isStream: true,
+      callback: res => {
+        res.on("data", chunk => {
+          logStream.write(chunk);
+          logFileStream.write(chunk.toString());
+        });
+        res.on("end", () => {
+          logStream.end();
+          logFileStream.end();
+        });
+      },
+    },
+  );
 };
 
 main().catch(error => {
