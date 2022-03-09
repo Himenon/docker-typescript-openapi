@@ -6,15 +6,20 @@ export interface CreateRequestArgs {
   requestBody?: string;
   hijack?: boolean;
   callback?: (sock: Socket) => void;
+  /** millseconds */
+  timeout?: number;
 }
 
-const createRequest = async ({ requestOptions, requestBody, hijack, callback }: CreateRequestArgs): Promise<http.IncomingMessage> => {
+const createRequest = async ({ requestOptions, requestBody, hijack, callback, timeout }: CreateRequestArgs): Promise<http.IncomingMessage> => {
   const req = http.request(requestOptions);
 
   const cancelTimeout = (() => {
+    if (!timeout) {
+      return () => undefined;
+    }
     const timer = setTimeout(() => {
       req.destroy();
-    }, 10000);
+    }, timeout);
     return () => clearTimeout(timer);
   })();
 
@@ -100,6 +105,8 @@ export interface RequestArgs {
   hijack?: boolean;
   isStream?: boolean;
   callback?: (sock: Socket) => void;
+  /** millseconds */
+  timeout?: number;
 }
 
 export const request = async (args: RequestArgs): Promise<any> => {
@@ -127,6 +134,7 @@ export const request = async (args: RequestArgs): Promise<any> => {
       requestBody,
       hijack: args.hijack,
       callback: args.callback,
+      timeout: args.timeout,
     });
     return await createResponse({ res });
   } catch (error) {

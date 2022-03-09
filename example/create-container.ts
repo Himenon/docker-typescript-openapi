@@ -3,6 +3,8 @@ import * as ApiClientImpl from "../src/api-client-impl";
 import * as fs from "fs";
 import * as path from "path";
 
+const wait = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const main = async () => {
   const apiClientImpl = ApiClientImpl.create({
     socketPath: "/var/run/docker.sock",
@@ -23,6 +25,14 @@ const main = async () => {
     if (!container.Id) {
       return;
     }
+    if (container.State === "running") {
+      await client.ContainerStop({
+        parameter: {
+          id: container.Id,
+        },
+      });
+    }
+
     await client.ContainerDelete({
       parameter: {
         id: container.Id,
@@ -76,6 +86,9 @@ const main = async () => {
   //   },
   //   { hijack: true },
   // );
+
+  await wait(3000);
+
   const logs = await client.ContainerLogs({
     headers: {
       Accept: "application/json",
