@@ -25,9 +25,12 @@ module.exports = {
      */
   forbidden: [
     {
+      name: "no-duplicate-dep-types",
+      severity: "ignore",
+    },
+    {
       name: "no-orphans",
-      comment: "Warn about orphans",
-      severity: "warn",
+      severity: "ignore",
     },
     {
       name: "not-to-test",
