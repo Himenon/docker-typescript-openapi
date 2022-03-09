@@ -8,12 +8,36 @@ export interface RequestArgs {
   requestBody?: any;
 }
 
-const getIncomingMessage = async (req: http.ClientRequest): Promise<http.IncomingMessage> => {
+const createRequest = async (requestOption: http.RequestOptions, requestBody?: string): Promise<http.IncomingMessage> => {
+  const req = http.request(requestOption);
+
+  const cancelTimeout = (() => {
+    const timer = setTimeout(() => {
+      req.destroy();
+    }, 10000)
+    return () => clearTimeout(timer);
+  })();
+  if (requestBody) {
+    req.write(requestBody);
+  }
+  req.end();
   return new Promise((resolve, reject) => {
+    req.on("connect", () => {
+      cancelTimeout();
+    });
+    req.on("close", () => {
+      cancelTimeout();
+    });
+    // req.on("finish", () => {
+    //   cancelTimeout();
+    //   reject();
+    // })
     req.on("response", (res) => {
+      cancelTimeout();
       resolve(res);
     });
     req.on("error", (error) => {
+      cancelTimeout();
       reject(error);
     });
   })
@@ -22,7 +46,6 @@ const getIncomingMessage = async (req: http.ClientRequest): Promise<http.Incomin
 const getResponse = async (res: http.IncomingMessage): Promise<any> => {
   return new Promise((resolve, reject) => {
     const chunks: any[] = [];
-    res.on("*", console.info);
     res.on("data", chunk => {
       chunks.push(chunk);
     });
@@ -31,8 +54,13 @@ const getResponse = async (res: http.IncomingMessage): Promise<any> => {
     })
     res.on("end", () => {
       const buffer = Buffer.concat(chunks);
-      const result = buffer.toString();
+      if (res.statusCode && 400 <= res.statusCode) {
+        const errorMessage = `[HTTP Code: ${res.statusCode}] ${res.statusMessage}.`;
+        const error = new Error(errorMessage);
+        reject(error);
+      }
       try {
+        const result = buffer.toString();
         const json = JSON.parse(result);
         resolve(json);
       } catch (error) {
@@ -43,13 +71,12 @@ const getResponse = async (res: http.IncomingMessage): Promise<any> => {
 }
 
 export const request = async (args: RequestArgs): Promise<any> => {
-  const hasRequestBody = !!args.requestBody;
-  const stringifiedRequestBody = hasRequestBody ? JSON.stringify(args.requestBody) : "";
+  const requestBody: string | undefined = !!args.requestBody ? JSON.stringify(args.requestBody) : undefined;
   const requestHeaders = {
     ...args.headers,
   };
-  if (hasRequestBody) {
-    requestHeaders["Content-Length"] =  Buffer.byteLength(stringifiedRequestBody, 'utf-8');
+  if (requestBody) {
+    requestHeaders["Content-Length"] = Buffer.byteLength(requestBody, 'utf-8');
   }
   const requestOptions: http.RequestOptions = {
     method: args.method,
@@ -57,11 +84,16 @@ export const request = async (args: RequestArgs): Promise<any> => {
     path: args.path,
     headers: requestHeaders,
   };
-  const req = http.request(requestOptions);
-  if (hasRequestBody) {
-    req.write(stringifiedRequestBody);
+  try {
+    const res = await createRequest(requestOptions, requestBody);
+    return await getResponse(res);
+  } catch (error) {
+    if (error instanceof Error) {
+      const errorMessage = [error.message, `${requestOptions.method}:${requestOptions.path}`].join("\n");
+      throw new Error(errorMessage);
+    } else {
+      throw new Error("Unknown Error");
+    }
   }
-  req.end();
-  const res = await getIncomingMessage(req);
-  return getResponse(res);
+  
 };

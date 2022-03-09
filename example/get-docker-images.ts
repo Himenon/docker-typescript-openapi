@@ -1,12 +1,12 @@
-import { Client } from "../lib/v1.41";
-import * as ApiClientImpl from "../lib/api-client-impl";
+import { Client } from "../src/v1.41";
+import * as ApiClientImpl from "../src/api-client-impl";
 import * as fs from "fs";
 
 const main = async () => {
   const apiClientImpl = ApiClientImpl.create({
     socketPath: "/var/run/docker.sock",
   });
-  const client = new Client(apiClientImpl, "");
+  const client = new Client(apiClientImpl, "/v1.41");
 
   fs.mkdirSync("debug", { recursive: true });
 

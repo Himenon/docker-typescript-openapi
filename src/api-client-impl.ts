@@ -2,7 +2,7 @@ import type { ApiClient, QueryParameters } from "./v1.41";
 import * as Formatter from "@himenon/openapi-parameter-formatter";
 import * as http from "./http";
 
-export const generateQueryString = (queryParameters: QueryParameters | undefined): string | undefined => {
+export const generateQueryString = (queryParameters: QueryParameters | undefined, additionalString?: string): string | undefined => {
   if (!queryParameters) {
     return undefined;
   }
@@ -20,6 +20,9 @@ export const generateQueryString = (queryParameters: QueryParameters | undefined
     return queryStringList;
   }, []);
 
+  if (additionalString) {
+    return [...queries, additionalString].join("&");
+  }
   return queries.join("&");
 };
 
@@ -31,7 +34,9 @@ export const create = (params: Params): ApiClient<unknown> => {
   const { socketPath } = params;
   const apiClientImpl: ApiClient<unknown> = {
     request: async (httpMethod, url, headers, requestBody, queryParameters): Promise<any> => {
-      const query = generateQueryString(queryParameters);
+      // Docker's openapi Schema incorrectly uses filters as query parameter
+      const { filters, ...omitedQueryParamsteres } = queryParameters || {};
+      const query = generateQueryString(omitedQueryParamsteres, filters?.value);
       const requestUrl = query ? url + "?" + encodeURI(query) : url;
       const requestHeaders = {
         ...headers,

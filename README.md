@@ -57,6 +57,16 @@ You can also just use the type definition
 
 Edit [config.ts](./scripts/config.ts)
 
+## Debugging
+
+Logfiles
+
+**Mac OS**
+
+```bash
+tail -f ~/Library/Containers/com.docker.docker/Data/log/host/com.docker.driver.amd64-linux.log
+```
+
 ## LICENCE
 
 [@Himenon/docker-typescript-openapi](https://github.com/Himenon/docker-typescript-openapi)・MIT
