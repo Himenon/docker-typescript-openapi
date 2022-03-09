@@ -102,6 +102,9 @@ const main = async () => {
       callback: res => {
         demuxStream(res, logStream, logStream);
         demuxStream(res, logFileStream, logFileStream);
+        res.on("data", chunks => {
+          logStream.write(chunks);
+        });
         res.on("end", () => {
           logStream.end();
           logFileStream.end();
