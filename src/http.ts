@@ -105,11 +105,8 @@ export interface RequestArgs {
   requestBody?: any;
   hijack?: boolean;
   isStream?: boolean;
-  /**
-   * hijackの場合、requestのunix socketが返ってくる
-   * isStreamの場合、responseのreadableStreamが返ってくる
-   */
-  callback?: (stream: stream.Readable) => void;
+  onHijackRequest?: (stream: stream.Readable) => void;
+  onResponse?: (stream: stream.Readable) => void;
   /** millseconds */
   timeout?: number;
 }
@@ -138,10 +135,10 @@ export const request = async (args: RequestArgs): Promise<any> => {
       requestOptions,
       requestBody,
       hijack: args.hijack,
-      callback: args.callback,
+      callback: args.onHijackRequest,
       timeout: args.timeout,
     });
-    return await createResponse({ res, callback: args.callback, isStream: args.isStream });
+    return await createResponse({ res, callback: args.onResponse, isStream: args.isStream });
   } catch (error) {
     if (error instanceof Error) {
       const errorMessage = [error.message, `${requestOptions.method}:${requestOptions.path}`].join("\n");

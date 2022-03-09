@@ -99,7 +99,7 @@ const main = async () => {
     },
     {
       isStream: true,
-      callback: res => {
+      onResponse: res => {
         demuxStream(res, logStream, logStream);
         demuxStream(res, logFileStream, logFileStream);
         res.on("data", chunks => {

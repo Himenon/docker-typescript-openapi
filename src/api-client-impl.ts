@@ -31,15 +31,16 @@ export interface Params {
   socketPath: string;
 }
 
-export interface RequestOptions {
+export interface Options {
   hijack?: boolean;
   isStream?: boolean;
-  callback?: (stream: stream.Readable) => void;
+  onHijackRequest?: (socket: stream.Readable) => void;
+  onResponse?: (res: stream.Readable) => void;
 }
 
-export const create = (params: Params): ApiClient<RequestOptions> => {
+export const create = (params: Params): ApiClient<Options> => {
   const { socketPath } = params;
-  const apiClientImpl: ApiClient<RequestOptions> = {
+  const apiClientImpl: ApiClient<Options> = {
     request: async (httpMethod, url, headers, requestBody, queryParameters, requestOptions): Promise<any> => {
       // Docker's openapi Schema incorrectly uses filters as query parameter
       const { filters, ...omitedQueryParamsteres } = queryParameters || {};
@@ -56,7 +57,8 @@ export const create = (params: Params): ApiClient<RequestOptions> => {
         requestBody: requestBody,
         hijack: requestOptions?.hijack,
         isStream: requestOptions?.isStream,
-        callback: requestOptions?.callback,
+        onHijackRequest: requestOptions?.onHijackRequest,
+        onResponse: requestOptions?.onResponse,
       });
       return response;
     },
