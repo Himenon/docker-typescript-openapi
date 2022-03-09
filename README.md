@@ -195,3 +195,8 @@ tail -f ~/Library/Containers/com.docker.docker/Data/log/host/com.docker.driver.a
 ## LICENCE
 
 [@Himenon/docker-typescript-openapi](https://github.com/Himenon/docker-typescript-openapi)・MIT
+
+## Inspired By
+
+- https://github.com/apocas/dockerode
+- https://github.com/apocas/docker-modem
