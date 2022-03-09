@@ -1,6 +1,7 @@
 import type { ApiClient, QueryParameters } from "./v1.41";
 import * as Formatter from "@himenon/openapi-parameter-formatter";
 import * as http from "./http";
+import type { Socket } from "net";
 
 export const generateQueryString = (queryParameters: QueryParameters | undefined, additionalString?: string): string | undefined => {
   if (!queryParameters) {
@@ -32,6 +33,7 @@ export interface Params {
 
 export interface RequestOptions {
   hijack?: boolean;
+  callback?: (sock: Socket) => void;
 }
 
 export const create = (params: Params): ApiClient<RequestOptions> => {
@@ -52,6 +54,7 @@ export const create = (params: Params): ApiClient<RequestOptions> => {
         path: requestUrl,
         requestBody: requestBody,
         hijack: requestOptions?.hijack,
+        callback: requestOptions?.callback,
       });
       return response;
     },

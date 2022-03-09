@@ -1,12 +1,14 @@
 import * as http from "http";
+import type { Socket } from "net";
 
 export interface CreateRequestArgs {
   requestOptions: http.RequestOptions;
   requestBody?: string;
   hijack?: boolean;
+  callback?: (sock: Socket) => void;
 }
 
-const createRequest = async ({ requestOptions, requestBody, hijack }: CreateRequestArgs): Promise<http.IncomingMessage> => {
+const createRequest = async ({ requestOptions, requestBody, hijack, callback }: CreateRequestArgs): Promise<http.IncomingMessage> => {
   const req = http.request(requestOptions);
 
   const cancelTimeout = (() => {
@@ -24,6 +26,7 @@ const createRequest = async ({ requestOptions, requestBody, hijack }: CreateRequ
     cancelTimeout();
     req.on("upgrade", function (res, sock, head) {
       console.log(sock);
+      callback?.(sock);
     });
   } else {
     req.end();
@@ -51,30 +54,40 @@ const createRequest = async ({ requestOptions, requestBody, hijack }: CreateRequ
   });
 };
 
-const getResponse = async (res: http.IncomingMessage): Promise<any> => {
+export interface CreateResponseArgs {
+  res: http.IncomingMessage;
+  isStream?: boolean;
+}
+
+const createResponse = async ({ res, isStream }: CreateResponseArgs): Promise<any> => {
+  const chunks: any[] = [];
+  res.on("data", chunk => {
+    chunks.push(chunk);
+  });
+
   return new Promise((resolve, reject) => {
-    const chunks: any[] = [];
-    res.on("data", chunk => {
-      chunks.push(chunk);
-    });
     res.on("error", error => {
       reject(error);
     });
-    res.on("end", () => {
-      const buffer = Buffer.concat(chunks);
-      if (res.statusCode && 400 <= res.statusCode) {
-        const errorMessage = `[HTTP Code: ${res.statusCode}] ${res.statusMessage}.`;
-        const error = new Error(errorMessage);
-        reject(error);
-      }
-      const text = buffer.toString();
-      try {
-        const json = JSON.parse(text);
-        resolve(json);
-      } catch (error) {
-        resolve(text);
-      }
-    });
+    if (isStream) {
+      console.log("TODO Stream");
+    } else {
+      res.on("end", () => {
+        const buffer = Buffer.concat(chunks);
+        if (res.statusCode && 400 <= res.statusCode) {
+          const errorMessage = `[HTTP Code: ${res.statusCode}] ${res.statusMessage}.`;
+          const error = new Error(errorMessage);
+          reject(error);
+        }
+        const text = buffer.toString();
+        try {
+          const json = JSON.parse(text);
+          resolve(json);
+        } catch (error) {
+          resolve(text);
+        }
+      });
+    }
   });
 };
 
@@ -85,6 +98,8 @@ export interface RequestArgs {
   headers?: http.OutgoingHttpHeaders;
   requestBody?: any;
   hijack?: boolean;
+  isStream?: boolean;
+  callback?: (sock: Socket) => void;
 }
 
 export const request = async (args: RequestArgs): Promise<any> => {
@@ -96,7 +111,7 @@ export const request = async (args: RequestArgs): Promise<any> => {
     requestHeaders["Content-Length"] = Buffer.byteLength(requestBody, "utf-8");
   }
   if (args.hijack) {
-    requestHeaders;
+    requestHeaders["Transfer-Encoding"] = "chunked";
     requestHeaders.Connection = "Upgrade";
     requestHeaders.Upgrade = "tcp";
   }
@@ -111,8 +126,9 @@ export const request = async (args: RequestArgs): Promise<any> => {
       requestOptions,
       requestBody,
       hijack: args.hijack,
+      callback: args.callback,
     });
-    return await getResponse(res);
+    return await createResponse({ res });
   } catch (error) {
     if (error instanceof Error) {
       const errorMessage = [error.message, `${requestOptions.method}:${requestOptions.path}`].join("\n");

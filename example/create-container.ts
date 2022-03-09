@@ -31,7 +31,7 @@ const main = async () => {
   });
   await Promise.all(removeTasks);
   const filename1 = "debug/docker-create-container.json";
-  const createdContainer = await client.ContainerCreate({
+  const container = await client.ContainerCreate({
     headers: {
       "Content-Type": "application/json",
     },
@@ -59,29 +59,37 @@ const main = async () => {
       },
     },
   });
-  await client.ContainerAttach({
+  await client.ContainerStart({
     parameter: {
-      id: createdContainer.Id,
-      stream: true,
-      stdout: true,
-      stdin: true,
-      stderr: true,
+      id: container.Id,
     },
   });
-
-  // const logs = await client.ContainerLogs({
-  //   headers: {
-  //     Accept: "application/json",
+  // await client.ContainerAttach(
+  //   {
+  //     parameter: {
+  //       id: container.Id,
+  //       stream: true,
+  //       stdout: true,
+  //       stdin: true,
+  //       stderr: true,
+  //     },
   //   },
-  //   parameter: {
-  //     id: createdContainer.Id,
-  //     stdout: true,
-  //     stderr: true,
-  //     follow: true,
-  //     tail: "all",
-  //   },
-  // });
-  fs.writeFileSync(filename1, JSON.stringify(createdContainer, null, 2), "utf-8");
+  //   { hijack: true },
+  // );
+  const logs = await client.ContainerLogs({
+    headers: {
+      Accept: "application/json",
+    },
+    parameter: {
+      id: container.Id,
+      stdout: true,
+      stderr: true,
+      // follow: true,
+      tail: "all",
+    },
+  });
+  console.log(logs);
+  fs.writeFileSync(filename1, JSON.stringify(container, null, 2), "utf-8");
   console.log(`Output: ${filename1}`);
 };
 
